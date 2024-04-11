@@ -1,0 +1,287 @@
+body {
+    margin: 0;
+    font-family: "Helvetica", sans-serif;
+    font-size: 20px;
+}
+
+
+select {
+    border-radius: 0.5rem;
+    border-width: 1px;
+    justify-self: end;
+    max-width: 60vw;
+    height: 40px;
+    font-size: 1rem;
+    background-color: #e8e8e8;
+}
+
+option {
+    font-size: 1rem;
+}
+
+label > input {
+    vertical-align: middle;
+}
+
+input[type=checkbox] {
+    width: 20px !important;
+    height: 20px !important;
+}
+
+input[type=button],
+input[type=number] {
+    display: block;
+    padding: 0.625rem;
+    border-radius: 0.4rem;
+    border-width: 1px;
+    font-size: 1rem;
+    line-height: 1.25rem;
+    color: #111827;
+    background-color: #e8e8e8;
+}
+
+input[type=button] {
+    border-width: 1px;
+    font-weight: bold;
+    background-color: #e8e8e8;
+}
+
+input[type=color] {
+    font-size: 1rem;
+    height: 42px;
+    width: 120px;
+    border-radius: 0.5rem;
+    border-width: 1px;
+    border-color: #D1D5DB;
+}
+
+input:focus {
+    border: 1px inset black;
+}
+
+p {
+    margin: 0 0 10px 0;
+    font-size: 110%;
+}
+
+label {
+    align-items: center;
+    display: flex;
+}
+
+table {
+    margin: 20px auto;
+    max-width: 1200px;
+    border-spacing: 5px;
+}
+
+td {
+    border: 1px solid #ddd;
+}
+
+#content td {
+    padding: 5px !important;
+}
+
+.fixed {
+    width: 100px;
+    background: #f1f1f1;
+    padding: 10px;
+}
+
+@media screen and (max-width: 600px) {
+    .fixed {
+        display: none;
+    }
+}
+
+.browse input {
+    display: none !important;
+}
+
+
+.content {
+    width: 100%;
+    padding-inline: 10px;
+}
+
+.content > * {
+    display: flex;
+    margin-bottom: 5px;
+}
+
+#header {
+    width: 100%;
+    height: 100px;
+    background-color: #f1f1f1;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    justify-content: center;
+}
+
+#header [type=icon] {
+    width: 90px;
+    height: 90px;
+    background-position: center;
+    background-image: url(../../data/icons/options/64.png);
+    background-size: cover;
+    background-repeat: no-repeat;
+}
+
+#header [type=title] {
+    font-weight: bold;
+    font-size: 150%;
+    line-height: 150%;
+    word-spacing: 4px;
+}
+
+#header [type=description] {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: #707070 !important;
+    font-size: 100%;
+}
+
+
+input:invalid {
+    border-color: red;
+    background-color: rgba(255, 0, 0, 0.2);
+}
+
+#notify {
+    width: min(80%, 400px);
+    height: 100px;
+    background-color: #fff;
+    border-radius: 0.4rem;
+    padding: 10px;
+}
+
+#notify[open] {
+    display: grid;
+    grid-template-rows: 1fr min-content;
+}
+
+#notify::backdrop {
+    background-color: rgba(0, 0, 0, 0.7);
+}
+
+.browser img {
+    width: 16px;
+}
+
+.note {
+    color: #707070;
+    padding: 0;
+    font-size: 90%;
+}
+
+.browse {
+    display: none;
+    font-weight: bold;
+    padding: 0 5px;
+    cursor: pointer;
+}
+
+.fm {
+    display: grid;
+    grid-template-columns: 1fr 120px;
+    grid-gap: 5px;
+    align-items: center;
+}
+
+.mf {
+    display: grid;
+    grid-template-columns: min-content 1fr;
+    grid-gap: 5px;
+    align-items: center;
+}
+
+.mf > :first-child {
+    width: max-content;
+}
+
+@media screen and (max-width: 600px) {
+    .mf {
+        grid-template-columns: 1fr;
+    }
+
+    .mf > :first-child {
+        width: unset;
+    }
+
+    .mf input {
+        justify-self: end;
+    }
+}
+
+.tds {
+    display: grid;
+    grid-template-columns: min-content 1fr min-content;
+    grid-gap: 5px;
+    align-items: center;
+}
+
+.fes {
+    display: grid;
+    grid-template-columns: min-content min-content 1fr min-content;
+    grid-gap: 5px;
+    align-items: center;
+}
+
+.fes > :first-child {
+    width: max-content;
+}
+
+@media screen and (max-width: 800px) {
+    .fes {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .fes select {
+        width: 100%;
+    }
+}
+
+.frt {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    justify-self: end;
+}
+
+.fnjh {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.fnjh > :first-child {
+    flex: 1;
+}
+
+[hbox] {
+    display: flex;
+    flex-direction: row;
+}
+
+[vbox] {
+    display: flex;
+    flex-direction: column;
+}
+
+[pack=center] {
+    justify-content: center;
+}
+
+[align=center] {
+    align-items: center;
+}
+
+[pack=end] {
+    justify-content: flex-end;
+}
+
+[align=end] {
+    align-items: flex-end;
+}
