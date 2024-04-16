@@ -64,7 +64,7 @@ chrome.runtime.onMessage.addListener(({request, method}, sender, response) => {
             for (let i = request.request.data; i < 6; i++) {
                 localStorage.removeItem("keyId-" + i)
             }
-            return true;
+            response(true)
         }
     }
 });

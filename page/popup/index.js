@@ -273,11 +273,13 @@ function expandAndClassify() {
                 size: 0
             }, prefs => {
                 qs('iframe').height = Math.min(content.scrollHeight + 5, prefs.fullHeight - 165)
+                Object.assign(document.body.style, null)
                 Object.assign(document.body.style, {height: (Number(qs('iframe').height) + 145) + "px"})
             })
 
             // classify
-            classifier.classify(content)
+            classifier.start()
+            // classifier.classify(content)
         }).catch(e => {
             doSummary();
             qs('iframe').contentDocument.body.textContent += `--Error fetching email content: ` + e.message;

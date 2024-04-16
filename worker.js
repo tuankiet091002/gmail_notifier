@@ -47,12 +47,6 @@ chrome.action.onClicked.addListener(() => chrome.storage.local.get({
     return self.openLink(prefs.url);
 }));
 
-
-// chrome.cookies.remove({name: 'GMAIL_AT', url: 'https://mail.google.com/mail/u/0'}, o => {
-//     console.log('remove cookie')
-//     chrome.cookies.get({name: 'GMAIL_AT', url: 'https://mail.google.com/mail/u/0'}, e => console.log(!!e))
-// });
-
 // runtime message handler
 chrome.runtime.onMessage.addListener((request, sender, response) => {
     const method = request.method;
@@ -84,5 +78,24 @@ chrome.runtime.onMessage.addListener((request, sender, response) => {
             url: 'https://mail.google.com/mail/u/' + Number(request.account)
         }, o => response(o?.value));
         return true;
+    } else if (method === 'fetch-stats') {
+        chrome.storage.local.get({
+            totalDocuments: 0,
+            // document frequency table for each category
+            docCount: {},
+            // for each category, how many words total were mapped to it
+            wordCount: {},
+            // for each category, how frequent was a given word mapped to it
+            wordFrequencyCount: {},
+            // for each word, how many document contains it
+            wordDocumentCount: {},
+            labels: {},
+            stopwords: []
+        }, prefs => response(prefs));
+        return true;
+    } else if (method === 'replace-stats') {
+        chrome.storage.local.set(request.data).then(() => {
+            return true
+        })
     }
 });
