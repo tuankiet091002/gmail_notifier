@@ -310,6 +310,11 @@ footer div[name="read"] {
     background-image: none;
 }
 
+footer div[name="decorate"] {
+    background-image: url('/page/popup/icons/refresh.png');
+    display: none;
+}
+
 footer div[name="read-all"] {
     background-image: url('/page/popup/icons/check_all.png');
 }

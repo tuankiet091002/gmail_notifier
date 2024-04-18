@@ -4,7 +4,8 @@
 let feeds;
 let selected = {};
 const skippedLabels = ['STARRED', 'Inbox', 'INBOX'];
-let response;
+let firstTimeExpand = new Map();
+let labelContent;
 
 const qs = function (q, m) {
     const reserved = {
@@ -27,6 +28,7 @@ const qs = function (q, m) {
         'refresh': 'footer div[name="refresh"]',
         'read': 'footer div[name="read"]',
         'read-all': 'footer div[name="read-all"]',
+        'decorate': 'footer div[name="decorate"]',
         'email-container': 'header div[name="email-container"]',
         'iframe': '#content iframe',
         'star': '#star'
@@ -237,70 +239,76 @@ const update = (() => {
 
 // change expand mode and classify
 function expandAndClassify() {
-
     const doSummary = () => {
         if (selected.entry) {
             qs('iframe').contentDocument.body.textContent = selected.entry.summary + ' ...';
             qs('iframe').contentDocument.body.classList.add('summary');
         }
     };
-
-
-    if (selected.entry) {
-        localStorage.setItem('last-id', selected.entry.id);
-    }
-
     const mode = qs('body').getAttribute('mode') === 'expanded' ? 1 : 0;
     const link = selected.entry.link;
+    let firstTime = true;
+    if (firstTimeExpand.has(link))
+        firstTime = firstTimeExpand.get(link)
+    else
+        firstTimeExpand.set(link, false)
 
     if (mode === 1) {
         doSummary();
         qs('content').setAttribute('loading', 'true');
 
         gmail.body(link).then(content => {
-
             // change body content
             qs('content').removeAttribute('loading');
             qs('iframe').contentDocument.querySelector('head base').href = link;
             qs('iframe').contentDocument.body.textContent = '';
-            qs('iframe').contentDocument.body.appendChild(content);
             qs('iframe').contentDocument.body.classList.remove('summary');
+
+            Object.assign(qs('decorate').style, {display: "block"})
 
             // dynamic iframe height
             chrome.storage.local.get({
                 fullWidth: 750,
                 fullHeight: 600,
-                size: 0
+                expanded: false,
+                decorated: false,
+                decorateOnExpand: true,
+                manualAsData: true,
             }, prefs => {
+                if (firstTime && prefs.decorateOnExpand && !prefs.decorated) {
+                    chrome.storage.local.set({decorated: true}).then()
+                    return;
+                }
+
+                if (prefs.decorated) {
+                    content = classifier.classify(link, content).content
+                }
+                qs('iframe').contentDocument.body.appendChild(content);
+
                 qs('iframe').height = Math.min(content.scrollHeight + 5, prefs.fullHeight - 165)
-                Object.assign(document.body.style, null)
                 Object.assign(document.body.style, {height: (Number(qs('iframe').height) + 145) + "px"})
             })
-
-            // classify
-            classifier.start()
-            // classifier.classify(content)
         }).catch(e => {
             doSummary();
             qs('iframe').contentDocument.body.textContent += `--Error fetching email content: ` + e.message;
         }).finally(() => {
             qs('content').removeAttribute('loading');
-
         })
     } else {
         doSummary();
+        Object.assign(qs('decorate').style, {display: "none"})
     }
 }
 
 // resize
-const resize = () => {
+const redisplay = () => {
     chrome.storage.local.get({
         fullWidth: 750,
         fullHeight: 600,
-        size: 0
+        expanded: false,
+        decorated: false
     }, prefs => {
-        const expanded = prefs.size === 1 || prefs.size === '1';
-        if (expanded) {
+        if (prefs.expanded) {
             document.body.setAttribute('mode', 'expanded');
         } else {
             document.body.removeAttribute('mode');
@@ -314,7 +322,7 @@ const resize = () => {
             height: 210
         };
         Object.assign(document.body.style, {
-            width: (expanded ? prefs.fullWidth : normal.width) + 'px',
+            width: (prefs.expanded ? prefs.fullWidth : normal.width) + 'px',
             height: normal.height + 'px',
         });
     });
@@ -324,7 +332,7 @@ const resize = () => {
 
 const star = url => {
     const id = gmail.get.thread(url);
-    const o = response.filter(o => o.thread === id).shift();
+    const o = labelContent.filter(o => o.thread === id).shift();
     if (o) {
         document.body.dataset.star = o.labels.some(s => (s === 'STARRED')).toString();
     } else {
@@ -333,7 +341,7 @@ const star = url => {
 };
 const labels = url => {
     const id = gmail.get.thread(url);
-    const o = response.filter(o => o.thread === id).shift();
+    const o = labelContent.filter(o => o.thread === id).shift();
     if (o) {
         const parent = document.getElementById('labels');
         const t = document.getElementById('label-template');
@@ -362,7 +370,7 @@ const fetchLabels = () => {
         if (!r) {
             return chrome.runtime.lastError;
         } else {
-            response = r;
+            labelContent = r;
             star(url);
             labels(url);
         }
@@ -376,7 +384,7 @@ const action = (cmd, links = selected.entry.link, callback = () => {
     chrome.storage.local.get({
         doReadOnArchive: true
     }, prefs => {
-        gmail.action({links, cmd, prefs}).then(r => {
+        gmail.action({links, cmd, prefs}).then(() => {
             callback();
             if (cmd === 'rd') {
                 qs('read').textContent = locale.get('popup_read');
@@ -493,15 +501,20 @@ new Listen('gmail', 'click', () => chrome.runtime.sendMessage({
     url: selected.parent.xml.link
 }, () => window.close()));
 new Listen('settings', 'click', () => chrome.tabs.update({
-    url: '/page/options/index.html'
+    url: '/page/option/index.html'
 }, () => window.close()));
 new Listen('read-all', 'click', () => {
     qs('read-all').setAttribute('wait', true);
     qs('read-all').setAttribute('disabled', true);
     action('rd-all', selected.parent.xml.entries.map(e => e.link));
 });
+new Listen('decorate', 'click', () => {
+    chrome.storage.local.get({decorated: false}, prefs => chrome.storage.local.set({
+        decorated: !prefs.decorated
+    }))
+});
 new Listen('expand', 'click', () => chrome.storage.local.set({
-    size: qs('body').getAttribute('mode') === 'expanded' ? 0 : 1
+    expanded: qs('body').getAttribute('mode') !== 'expanded'
 }));
 new Listen('star', 'click', () => {
     const cmd = document.body.dataset.star === 'true' ? 'xst' : 'st';
@@ -509,12 +522,12 @@ new Listen('star', 'click', () => {
     document.body.dataset.star = cmd === 'xst' ? 'false' : 'true';
 });
 
-resize();
+redisplay();
 chrome.storage.onChanged.addListener(prefs => {
-    if (prefs.size || prefs.fullWidth || prefs.fullHeight) {
-        resize();
+        if (prefs.expanded || prefs.fullWidth || prefs.fullHeight || prefs.decorated)
+            redisplay()
     }
-});
+)
 
 // communication
 chrome.runtime.onMessage.addListener(request => {
@@ -562,6 +575,7 @@ qs('iframe').onload = () => chrome.storage.session.get({'cached-objects': []}, p
                 const account = feeds.filter(o => accountSelector.gen(o.xml) === lastAccount).shift();
                 if (account) {
                     const id = localStorage.getItem('last-id');
+                    localStorage.removeItem("last-id")
                     selected = {
                         entry: [
                             ...account.xml.entries.filter(e => e.id === id),

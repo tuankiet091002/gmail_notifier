@@ -6,7 +6,7 @@ config.map = {
     number: [
         'period', 'resetPeriod', 'notificationTime', 'notificationTruncate', 'openMode', 'notification.sound.media.default.type', 'soundVolume', 'silentTime', 'oldFashion', 'size', 'fullWidth', 'fullHeight', 'clrPattern'
     ],
-    checkbox: ['notification', 'alert', 'searchMode', 'ignoreOpens', 'doReadOnArchive', 'inboxRedirection', 'alphabetic', 'onGmailNotification', 'minimal', 'badge', 'express', 'smartOpen', 'notification.buttons.markasread', 'notification.buttons.archive', 'notification.buttons.trash', 'classifyOnExpand', 'manualAsData']
+    checkbox: ['notification', 'alert', 'searchMode', 'ignoreOpens', 'doReadOnArchive', 'inboxRedirection', 'alphabetic', 'onGmailNotification', 'minimal', 'badge', 'express', 'smartOpen', 'notification.buttons.markasread', 'notification.buttons.archive', 'notification.buttons.trash', 'decorateOnExpand', 'manualAsData']
 };
 
 config.prefs = {
@@ -38,6 +38,6 @@ config.prefs = {
     'notification.buttons.archive': true,
     'notification.buttons.trash': false,
     'smartOpen': true,
-    'classifyOnExpand': true,
+    'decorateOnExpand': true,
     'manualAsData': true,
 };

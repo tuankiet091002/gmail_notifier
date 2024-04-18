@@ -81,14 +81,13 @@ chrome.runtime.onMessage.addListener((request, sender, response) => {
     } else if (method === 'fetch-stats') {
         chrome.storage.local.get({
             totalDocuments: 0,
+            totalWords: 0,
             // document frequency table for each category
             docCount: {},
-            // for each category, how many words total were mapped to it
-            wordCount: {},
             // for each category, how frequent was a given word mapped to it
             wordFrequencyCount: {},
             // for each word, how many document contains it
-            wordDocumentCount: {},
+            wordAppearanceCount: {},
             labels: {},
             stopwords: []
         }, prefs => response(prefs));

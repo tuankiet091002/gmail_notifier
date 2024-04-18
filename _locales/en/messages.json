@@ -402,13 +402,10 @@
     "message": "Classifier"
   },
   "options_classifier_1": {
-    "message": "Automatically classify email when expanded"
+    "message": "Decorated text as default"
   },
   "options_classifier_2": {
     "message": "Use manually classified email as training data"
-  },
-  "options_classifier_3": {
-    "message": "Training data stat: "
   },
   "options_px": {
     "message": "px"
@@ -463,6 +460,9 @@
   },
   "popup_read_all": {
     "message": "Mark all as read"
+  },
+  "popup_decorate": {
+    "message": "Decorate spam words"
   },
   "popup_msg_1": {
     "message": "just now"

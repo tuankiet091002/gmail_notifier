@@ -1,18 +1,18 @@
 'use strict';
 
 const classifier = {};
+const classifyCached = new Map()
 {
     const lemmatizer = new Lemmatizer();
     let stats = {
         totalDocuments: 0,
+        totalWords: 0,
         // document frequency table for each category
         docCount: {},
-        // for each category, how many words total were mapped to it
-        wordCount: {},
         // for each category, how frequent was a given word mapped to it
         wordFrequencyCount: {},
         // for each word, how many document contains it
-        wordDocumentCount: {},
+        wordAppearanceCount: {},
         labels: {},
         stopwords: []
     }
@@ -33,8 +33,8 @@ const classifier = {};
                                                 const proceedData = async () => {
                                                     data.data.map(x => x.length = 2)
                                                     const n = data.data.length
-                                                    for (let i = 1; i < n; i++) {
-                                                            await classifier.train(data.data[i][1], data.data[i][0])
+                                                    for (let i = 1; i < 3000; i++) {
+                                                        await classifier.train(data.data[i][1], data.data[i][0])
                                                     }
                                                 }
 
@@ -55,29 +55,82 @@ const classifier = {};
             }
         )
     }
-    once()
+    document.addEventListener('DOMContentLoaded', once);
 
     const initiateLabel = (labelName) => {
         if (!stats.labels[labelName]) {
             stats.docCount[labelName] = 0;
-            stats.wordCount[labelName] = 0;
             stats.wordFrequencyCount[labelName] = {};
-            stats.wordDocumentCount[labelName] = 0;
+            stats.wordAppearanceCount[labelName] = {};
             stats.labels[labelName] = true;
         }
     }
 
-    const deepText = node => {
-        let A = [];
+    const decorate = (node, result) => {
         if (node) {
-            node = node.firstChild;
-            while (node != null) {
-                if (node.nodeType === 3) A[A.length] = node.textContent;
-                else A = A.concat(deepText(node));
-                node = node.nextSibling;
-            }
+            Array.from(node.childNodes).forEach(childNode => {
+                    if (childNode.nodeType === 3 && /\S/.test(childNode.textContent)) {
+                        let spanNode, currentLabel;
+                        let insertLocation = childNode
+                        childNode.textContent.split(" ").forEach(word => {
+                            const proceededWords = word.replace(/[0-9\s`!@#$%^&*()_\-–+=\[\]{}:;"<>,.?/|\\·]/g, " ")
+                                .replace(/n[’']t/g, "")
+                                .replace(/[’']([sdm]|ll|ve|re)/g, "").split(" ")
+
+                            if (!proceededWords.length) {
+                                if (spanNode)
+                                    spanNode.innerText += word + " "
+                                else
+                                    spanNode = document.createElement(" ")
+                                return;
+                            }
+
+                            proceededWords.map(pWord => {
+                                let label;
+                                if (binarySearch(pWord, stats.stopwords)) label = "neutral"
+                                else {
+                                    const lemma = lemmatizer.only_lemmas(pWord)[0] || pWord
+                                    const score = result[lemma] || 0.5
+                                    if (score > -0.15)
+                                        label = "safe"
+                                    else if (score > -0.5)
+                                        label = "dangerous"
+                                    else
+                                        label = "neutral"
+                                }
+
+                                if (!spanNode || label !== currentLabel) {
+                                    currentLabel = label;
+                                    if (!spanNode)
+                                        spanNode = document.createElement('span')
+                                    // remove last whitespace
+                                    spanNode.innerText = spanNode.innerText.substring(0, spanNode.innerText.length - 1)
+                                    spanNode.style.backgroundColor = label === 'dangerous' ? 'red' : label === 'safe' ? "green" : "none"
+                                    // insert the old one into parent node list
+                                    node.insertBefore(spanNode, insertLocation)
+                                    const lastWhiteSpace = document.createTextNode(" ")
+                                    node.insertBefore(lastWhiteSpace, insertLocation)
+
+                                    // new span node
+                                    spanNode = document.createElement("span")
+                                    spanNode.innerText += pWord
+                                } else {
+                                    spanNode.innerText += pWord + " "
+                                }
+                            })
+
+
+                        })
+                        // span.innerText = childNode.textContent
+                        // span.style.backgroundColor = 'red'
+                        // node.insertBefore(span, childNode)
+                    }
+                    node.removeChild(childNode)
+                    decorate(childNode, result)
+                }
+            )
         }
-        return A;
+        return node;
     }
 
     const binarySearch = (x, arr) => {
@@ -103,15 +156,15 @@ const classifier = {};
 
     const tokenize = (text) => {
         // remove escape character => remove special character => split to array => filter stopword => lemmatize => merge
-        return text.filter(n => /\S/.test(n))
-            .map(n => n.toLowerCase().replace(/[0-9\s`!@#$%^&*()_\-+=\[\]{}:;"<>,.?/|\\·]/g, " ")
-                .replace(/n't/g, "")
-                .replace(/'([sdm]|ll|ve|re)/g, "")
-                .split(" ")
-                .filter(m => m && !/'+/.test(m) && !binarySearch(m, stats.stopwords))
-                .map(m => lemmatizer.only_lemmas(m)[0] || m))
+        return text.toLowerCase().replace(/[0-9\s`!@#$%^&*()_\-–+=\[\]{}:;"<>,.?/|\\·]/g, " ")
+            .replace(/n[’']t/g, "")
+            .replace(/[’']([sdm]|ll|ve|re)/g, "")
+            .split(" ")
+            .filter(m => m && !/'+/.test(m) && !binarySearch(m, stats.stopwords))
+            .map(m => lemmatizer.only_lemmas(m)[0] || m)
             .flat(Infinity)
     }
+
 
     const frequency = (tokens) => {
         let frequencyTable = Object.create(null)
@@ -127,29 +180,22 @@ const classifier = {};
     }
 
     const inverseDocFrequency = token => {
-        return Math.log(stats.totalDocuments / stats.wordDocumentCount[token])
+        let wordDocCount = 0;
+        Object.keys(stats.labels).map(l => {
+            wordDocCount += stats.wordFrequencyCount[l][token] || 0
+        })
+        return Math.log(stats.totalDocuments / (wordDocCount + 1))
     }
 
     const tokenLikelihood = (token, label) => {
 
-        const wordDocCount = stats.wordDocumentCount[label][token] || 0
+        const wordLabelCount = stats.wordAppearanceCount[label][token] || 0;
 
         // what is the count of all words that have ever been mapped to this category
         const docCount = stats.docCount[label]
 
-        return wordDocCount / docCount;
+        return (wordLabelCount + 1) / docCount;
     }
-
-    const docPrior = (label) => {
-        return stats.docCount[label] / stats.totalDocuments;
-    }
-
-    const tokenEvidence = (token, label) => {
-        let totalToken = 0;
-        Object.keys(labels).map(label => totalToken += stats.wordFrequencyCount[label][token] || 0)
-        return stats.wordFrequencyCount[label][token] / totalToken;
-    }
-
 
     classifier.train = (content, label, rawText = true) => {
         return new Promise((resolve) => {
@@ -162,10 +208,10 @@ const classifier = {};
             Object.keys(frequencyTable).forEach(token => {
                 const frequencyInContent = frequencyTable[token]
 
-                if (!stats.wordDocumentCount[token])
-                    stats.wordDocumentCount[token] = 1
+                if (!stats.wordAppearanceCount[label][token])
+                    stats.wordAppearanceCount[label][token] = 1
                 else
-                    stats.wordDocumentCount[token] += 1
+                    stats.wordAppearanceCount[label][token] += 1
 
                 if (!stats.wordFrequencyCount[label][token]) {
                     stats.wordFrequencyCount[label][token] = frequencyInContent
@@ -173,7 +219,7 @@ const classifier = {};
                     stats.wordFrequencyCount[label][token] += frequencyInContent
                 }
 
-                stats.wordCount[label] += frequencyInContent
+                stats.totalWords += frequencyInContent
             })
 
             resolve();
@@ -181,32 +227,36 @@ const classifier = {};
 
     }
 
-    classifier.classify = content => {
+    classifier.classify = (id, content) => {
+
+        if (classifyCached.has(id)) {
+            return classifyCached.get(id)
+        }
+
         let maxProbability = -Infinity, chosenLabel = null
 
-        const textNodeList = deepText(content)
-        const tokenList = tokenize(textNodeList)
+        const tokenList = tokenize(content.innerText)
+        console.log(tokenList)
         const frequencyTable = frequency(tokenList)
+        let result = {}
 
-        Object.keys(labels).forEach(label => {
-            // P(Ci|E) = P(E|Ci) * P(Ci) / P(E)
-            // P(E)
-            const labelProbability = docCount[label] / totalDocuments;
-            let logProbability = Math.log(labelProbability);
+        Object.keys(stats.labels).forEach(label => {
+            // console.log('///////////LABEL/////////// ' + label)
+            result[label] = {}
+            const prior = (stats.docCount[label] + 1) / stats.totalDocuments;
+            let logProbability = 0;
 
             Object.keys(frequencyTable).forEach(token => {
                 // weight parameter
                 const frequencyInLabel = frequencyTable[token]
                 const tf = frequencyInLabel / tokenList.length;
                 const idf = inverseDocFrequency(token);
-                // bayes theorem
+                // P(w|c)
                 const likelihood = tokenLikelihood(token, label)
-                const prior = docPrior(label)
-                const evidence = tokenEvidence(token, label)
-                // tf + idf + likelihood - prior + evidence
-                logProbability += Math.log(tf) + Math.log(idf) + Math.log(likelihood) + Math.log(prior) - Math.log(evidence)
 
-                console.log('log probability is: ' + logProbability)
+                result[label][token] = Math.log(Math.pow(likelihood * prior, tf * idf))
+                logProbability += result[label][token]
+                // console.log(token + ": " + Math.exp(logProbability))
             })
 
             if (logProbability > maxProbability) {
@@ -214,13 +264,12 @@ const classifier = {};
                 chosenLabel = label
             }
         })
-        return {
-            result: chosenLabel,
-            map: new Map()
-        }
-    }
 
-    classifier.start = () => {
-        chrome.runtime.sendMessage({method: "fetch-stats"}, prefs => console.log(prefs))
+        const returnObj = {
+            result: chosenLabel,
+            content: decorate(content, result[chosenLabel]),
+        }
+        classifyCached.set(id, returnObj)
+        return returnObj;
     }
 }
