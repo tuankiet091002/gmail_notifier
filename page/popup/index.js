@@ -282,6 +282,7 @@ function expandAndClassify() {
 
                 if (prefs.decorated) {
                     content = classifier.classify(link, content).content
+                    console.log(classifier.classify(link, content).result)
                 }
                 qs('iframe').contentDocument.body.appendChild(content);
 

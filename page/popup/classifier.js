@@ -68,64 +68,86 @@ const classifyCached = new Map()
 
     const decorate = (node, result) => {
         if (node) {
+            // depth first search
             Array.from(node.childNodes).forEach(childNode => {
                     if (childNode.nodeType === 3 && /\S/.test(childNode.textContent)) {
-                        let spanNode, currentLabel;
-                        let insertLocation = childNode
-                        childNode.textContent.split(" ").forEach(word => {
-                            const proceededWords = word.replace(/[0-9\s`!@#$%^&*()_\-–+=\[\]{}:;"<>,.?/|\\·]/g, " ")
+                        let currentLabel, spanNode = document.createElement("span");
+                        const wordList = childNode.textContent.split(" ")
+                        // console.log(childNode.textContent)
+                        wordList.forEach((word, index) => {
+                            const proceededWords = word.replace(/[0-9\s`!@#$%^&*()_\-–+=\[\]{}:;"<>,.?/|\\·•©]/g, " ")
                                 .replace(/n[’']t/g, "")
-                                .replace(/[’']([sdm]|ll|ve|re)/g, "").split(" ")
+                                .replace(/[’']([sdm]|ll|ve|re)/g, "")
+                                .toLowerCase().split(" ").filter(w => w)
 
-                            if (!proceededWords.length) {
-                                if (spanNode)
-                                    spanNode.innerText += word + " "
-                                else
-                                    spanNode = document.createElement(" ")
-                                return;
+                            // console.log(" ===> " + JSON.stringify(proceededWords))
+
+                            // average label score for composite token
+                            let stopWords = 0, label
+                            let multipliedScore = Number(proceededWords.map(pWord => {
+                                if (binarySearch(pWord, stats.stopwords)) {
+                                    stopWords++;
+                                    return 0;
+                                } else {
+                                    const lemma = lemmatizer.only_lemmas(pWord)[0] || pWord
+                                    // console.log(`${lemma}: ${result[lemma] || "can't find ${lemma}"}`)
+                                    return result[lemma] || 0.5
+                                }
+                            }).reduce((S, v) => S + v, 0))
+
+                            if (stopWords === proceededWords.length) label = "none"
+                            else {
+                                const score = multipliedScore / (proceededWords.length - stopWords)
+                                if (score > -4) label = "danger"
+                                else if (score > -8) label = "neutral"
+                                else label = "safe"
+                            }
+                            let color;
+                            switch (currentLabel) {
+                                case "danger":
+                                    color = "#EF4444";
+                                    break;
+                                case "neutral":
+                                    color = "#FDE047";
+                                    break;
+                                case "safe":
+                                    color = "#22C55E"
+                                    break;
+                                default:
+                                    color = "none"
                             }
 
-                            proceededWords.map(pWord => {
-                                let label;
-                                if (binarySearch(pWord, stats.stopwords)) label = "neutral"
-                                else {
-                                    const lemma = lemmatizer.only_lemmas(pWord)[0] || pWord
-                                    const score = result[lemma] || 0.5
-                                    if (score > -0.15)
-                                        label = "safe"
-                                    else if (score > -0.5)
-                                        label = "dangerous"
-                                    else
-                                        label = "neutral"
-                                }
+                            // console.log('label: ' + label)
 
-                                if (!spanNode || label !== currentLabel) {
-                                    currentLabel = label;
-                                    if (!spanNode)
-                                        spanNode = document.createElement('span')
-                                    // remove last whitespace
-                                    spanNode.innerText = spanNode.innerText.substring(0, spanNode.innerText.length - 1)
-                                    spanNode.style.backgroundColor = label === 'dangerous' ? 'red' : label === 'safe' ? "green" : "none"
-                                    // insert the old one into parent node list
-                                    node.insertBefore(spanNode, insertLocation)
-                                    const lastWhiteSpace = document.createTextNode(" ")
-                                    node.insertBefore(lastWhiteSpace, insertLocation)
+                            if (label !== currentLabel && spanNode.innerText) {
+                                // remove last whitespace
+                                spanNode.innerText = spanNode.innerText.slice(0, -1)
 
-                                    // new span node
-                                    spanNode = document.createElement("span")
-                                    spanNode.innerText += pWord
-                                } else {
-                                    spanNode.innerText += pWord + " "
-                                }
-                            })
+                                spanNode.style.backgroundColor = color
+                                // insert the old one into parent node list
+                                node.insertBefore(spanNode, childNode)
 
+                                // insert last white space for next portion of text
+                                const lastWhiteSpace = document.createTextNode(" ")
+                                node.insertBefore(lastWhiteSpace, childNode)
 
+                                // new span for next portion of paragraph
+                                spanNode = document.createElement("span")
+                            }
+                            spanNode.innerText += word + " "
+                            if (index === wordList.length - 1) {
+                                if (label === currentLabel)
+                                    spanNode.innerText = spanNode.innerText.slice(0, -1)
+                                spanNode.style.backgroundColor = color
+                                node.insertBefore(spanNode, childNode)
+                            }
+
+                            currentLabel = label
                         })
-                        // span.innerText = childNode.textContent
-                        // span.style.backgroundColor = 'red'
-                        // node.insertBefore(span, childNode)
+
+                        node.removeChild(childNode)
                     }
-                    node.removeChild(childNode)
+                    // next node
                     decorate(childNode, result)
                 }
             )
@@ -164,7 +186,6 @@ const classifyCached = new Map()
             .map(m => lemmatizer.only_lemmas(m)[0] || m)
             .flat(Infinity)
     }
-
 
     const frequency = (tokens) => {
         let frequencyTable = Object.create(null)
@@ -236,7 +257,6 @@ const classifyCached = new Map()
         let maxProbability = -Infinity, chosenLabel = null
 
         const tokenList = tokenize(content.innerText)
-        console.log(tokenList)
         const frequencyTable = frequency(tokenList)
         let result = {}
 
@@ -254,8 +274,8 @@ const classifyCached = new Map()
                 // P(w|c)
                 const likelihood = tokenLikelihood(token, label)
 
-                result[label][token] = Math.log(Math.pow(likelihood * prior, tf * idf))
-                logProbability += result[label][token]
+                result[label][token] = Math.log(likelihood) + Math.log(prior)
+                logProbability += tf * idf * result[label][token]
                 // console.log(token + ": " + Math.exp(logProbability))
             })
 
