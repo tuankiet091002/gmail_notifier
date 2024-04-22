@@ -311,7 +311,7 @@ footer div[name="read"] {
 }
 
 footer div[name="decorate"] {
-    background-image: url('/page/popup/icons/refresh.png');
+    background-image: url('/page/popup/icons/classify.png');
     display: none;
 }
 

@@ -75,7 +75,7 @@ const classifyCached = new Map()
                         const wordList = childNode.textContent.split(" ")
                         // console.log(childNode.textContent)
                         wordList.forEach((word, index) => {
-                            const proceededWords = word.replace(/[0-9\s`!@#$%^&*()_\-–+=\[\]{}:;"<>,.?/|\\·•©]/g, " ")
+                            const proceededWords = word.replace(/[0-9\s`!@#$%^&*()_\-–+=\[\]{}:;"<>,.?/|\\·・•©]/g, " ")
                                 .replace(/n[’']t/g, "")
                                 .replace(/[’']([sdm]|ll|ve|re)/g, "")
                                 .toLowerCase().split(" ").filter(w => w)
@@ -102,28 +102,31 @@ const classifyCached = new Map()
                                 else if (score > -8) label = "neutral"
                                 else label = "safe"
                             }
-                            let color;
-                            switch (currentLabel) {
-                                case "danger":
-                                    color = "#EF4444";
-                                    break;
-                                case "neutral":
-                                    color = "#FDE047";
-                                    break;
-                                case "safe":
-                                    color = "#22C55E"
-                                    break;
-                                default:
-                                    color = "none"
-                            }
 
-                            // console.log('label: ' + label)
+                            const labelColor = (label) => {
+                                let color;
+                                switch (label) {
+                                    case "danger":
+                                        color = "#EF4444";
+                                        break;
+                                    case "neutral":
+                                        color = "#FDE047";
+                                        break;
+                                    case "safe":
+                                        color = "#22C55E"
+                                        break;
+                                    default:
+                                        color = "none";
+
+                                }
+                                return color;
+                            }
 
                             if (label !== currentLabel && spanNode.innerText) {
                                 // remove last whitespace
                                 spanNode.innerText = spanNode.innerText.slice(0, -1)
 
-                                spanNode.style.backgroundColor = color
+                                spanNode.style.backgroundColor = labelColor(currentLabel)
                                 // insert the old one into parent node list
                                 node.insertBefore(spanNode, childNode)
 
@@ -138,7 +141,8 @@ const classifyCached = new Map()
                             if (index === wordList.length - 1) {
                                 if (label === currentLabel)
                                     spanNode.innerText = spanNode.innerText.slice(0, -1)
-                                spanNode.style.backgroundColor = color
+
+                                spanNode.style.backgroundColor = labelColor(label)
                                 node.insertBefore(spanNode, childNode)
                             }
 
@@ -178,7 +182,7 @@ const classifyCached = new Map()
 
     const tokenize = (text) => {
         // remove escape character => remove special character => split to array => filter stopword => lemmatize => merge
-        return text.toLowerCase().replace(/[0-9\s`!@#$%^&*()_\-–+=\[\]{}:;"<>,.?/|\\·]/g, " ")
+        return text.toLowerCase().replace(/[0-9\s`!@#$%^&*()_\-–+=\[\]{}:;"<>,.?/|\\·・•©]/g, " ")
             .replace(/n[’']t/g, "")
             .replace(/[’']([sdm]|ll|ve|re)/g, "")
             .split(" ")
@@ -278,6 +282,7 @@ const classifyCached = new Map()
                 logProbability += tf * idf * result[label][token]
                 // console.log(token + ": " + Math.exp(logProbability))
             })
+            console.log(label + ": " + logProbability)
 
             if (logProbability > maxProbability) {
                 maxProbability = logProbability
@@ -289,6 +294,7 @@ const classifyCached = new Map()
             result: chosenLabel,
             content: decorate(content, result[chosenLabel]),
         }
+        console.log(result[chosenLabel])
         classifyCached.set(id, returnObj)
         return returnObj;
     }

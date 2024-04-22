@@ -462,7 +462,7 @@
     "message": "Mark all as read"
   },
   "popup_decorate": {
-    "message": "Decorate spam words"
+    "message": "Classify email"
   },
   "popup_msg_1": {
     "message": "just now"
