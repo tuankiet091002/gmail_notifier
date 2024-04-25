@@ -17,10 +17,9 @@ const classifyCached = new Map()
         stopwords: []
     }
 
-
     const once = () => {
         chrome.runtime.sendMessage({method: "fetch-stats"}, res => {
-                stats = res
+                // stats = res
                 if (!Object.keys(stats.stopwords).length) {
                     fetch('/data/classifier-datas/stopwords.json')
                         .then((response) => response.json())
@@ -32,8 +31,7 @@ const classifyCached = new Map()
                                             complete: (data) => {
                                                 const proceedData = async () => {
                                                     data.data.map(x => x.length = 2)
-                                                    const n = data.data.length
-                                                    for (let i = 1; i < 3000; i++) {
+                                                    for (let i = 1; i < data.data.length; i++) {
                                                         await classifier.train(data.data[i][1], data.data[i][0])
                                                     }
                                                 }
@@ -222,13 +220,13 @@ const classifyCached = new Map()
         return (wordLabelCount + 1) / docCount;
     }
 
-    classifier.train = (content, label, rawText = true) => {
+    classifier.train = (content, label) => {
         return new Promise((resolve) => {
             initiateLabel(label)
             stats.docCount[label]++;
             stats.totalDocuments++;
 
-            const tokenList = tokenize(rawText ? [content] : content)
+            const tokenList = tokenize(content)
             const frequencyTable = frequency(tokenList)
             Object.keys(frequencyTable).forEach(token => {
                 const frequencyInContent = frequencyTable[token]
@@ -246,7 +244,6 @@ const classifyCached = new Map()
 
                 stats.totalWords += frequencyInContent
             })
-
             resolve();
         })
 
@@ -265,7 +262,6 @@ const classifyCached = new Map()
         let result = {}
 
         Object.keys(stats.labels).forEach(label => {
-            // console.log('///////////LABEL/////////// ' + label)
             result[label] = {}
             const prior = (stats.docCount[label] + 1) / stats.totalDocuments;
             let logProbability = 0;
@@ -280,7 +276,6 @@ const classifyCached = new Map()
 
                 result[label][token] = Math.log(likelihood) + Math.log(prior)
                 logProbability += tf * idf * result[label][token]
-                // console.log(token + ": " + Math.exp(logProbability))
             })
             console.log(label + ": " + logProbability)
 

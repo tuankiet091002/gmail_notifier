@@ -266,7 +266,7 @@ body:not([mode="expanded"]) #content div[name="body"] > iframe {
 }
 
 body[mode="expanded"] #content div[name="body"] > iframe {
-    /*height: calc(100% - 145px);*/
+    height: calc(100% - 145px);
     width: calc(100% - 24px);
     position: absolute;
 }
@@ -311,7 +311,7 @@ footer div[name="read"] {
 }
 
 footer div[name="decorate"] {
-    background-image: url('/page/popup/icons/classify.png');
+    background-image: url('/page/popup/icons/decorate.png');
     display: none;
 }
 
