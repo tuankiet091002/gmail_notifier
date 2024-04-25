@@ -17,6 +17,7 @@ const qs = function (q, m) {
         'email': '#content div[name="email"]',
         'sender': '#content div[name="sender"] a',
         'title': '#content div[name="title"] a',
+        'titleContainer': '#content div[name="title"]',
         'next': 'header div div:nth-child(2)',
         'previous': 'header div div:nth-child(1)',
         'archive': 'footer div[name="archive"]',
@@ -163,7 +164,6 @@ const update = (() => {
             return;
         }
 
-
         // updating current index
         selected.parent.xml.entries.forEach((entry, i) => {
             if (entry.id === selected.entry.id) {
@@ -280,9 +280,29 @@ function expandAndClassify() {
                     return;
                 }
 
+                // classify-related actions
                 if (prefs.decorated) {
-                    content = classifier.classify(link, content).content
-                    console.log(classifier.classify(link, content).result)
+                    const {content: dContent, result: label} = classifier.classify(link, content)
+                    // change content
+                    content = dContent;
+                    // icon at mail title
+                    if (!document.querySelector('div[name="arrow"]')) {
+                        const arrowIcon = document.createElement('div')
+                        arrowIcon.setAttribute("name", "arrow")
+                        const labelIcon = document.createElement('div')
+                        labelIcon.setAttribute("name", label === "spam" ? "spam" : "safe")
+                        qs("titleContainer").insertBefore(arrowIcon, qs('star'))
+                        qs("titleContainer").insertBefore(labelIcon, qs('star'))
+                    }
+
+                    // spam button
+                    if (label === "spam") {
+                        qs("spam").style.backgroundColor = "#c47d09"
+                        qs("spam").style.opacity = 1
+                        qs("spam").style.filter = "invert(1)"
+                    }
+
+                    // manual classify
                 }
                 qs('iframe').contentDocument.body.appendChild(content);
 

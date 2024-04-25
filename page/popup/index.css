@@ -179,6 +179,38 @@ header div[name="nav"] div[name="next"] {
     border-radius: 0.4rem;
 }
 
+#content div[name="title"] div[name="arrow"] {
+    display: inline-block;
+    width: 36px;
+    height: 25px;
+    background-size: 100% 100%;
+    background-position: center;
+    cursor: pointer;
+    vertical-align: bottom;
+    margin-right: 10px;
+    background-image: url('/page/popup/icons/conclude_arrow.png');
+}
+
+#content div[name="title"] div[name="spam"] {
+    width: 36px;
+    height: 36px;
+    background-repeat: no-repeat;
+    background-size: 22px;
+    background-position: center;
+    margin-right: 10px;
+    background-image: url('/page/popup/icons/spam_mail.png');
+}
+
+#content div[name="title"] div[name="safe"] {
+    width: 36px;
+    height: 36px;
+    background-repeat: no-repeat;
+    background-size: 36px;
+    background-position: center;
+    margin-right: 10px;
+    background-image: url('/page/popup/icons/safe_mail.png');
+}
+
 #content div[name="title"] #star:hover {
     background-color: rgb(102, 102, 102);
 }
