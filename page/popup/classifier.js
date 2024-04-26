@@ -260,6 +260,7 @@ const classifyCached = new Map()
         const tokenList = tokenize(content.innerText)
         const frequencyTable = frequency(tokenList)
         let result = {}
+        let labels = {}
 
         Object.keys(stats.labels).forEach(label => {
             result[label] = {}
@@ -276,9 +277,9 @@ const classifyCached = new Map()
 
                 result[label][token] = Math.log(likelihood) + Math.log(prior)
                 logProbability += tf * idf * result[label][token]
-            })
-            console.log(label + ": " + logProbability)
 
+            })
+            labels[label] = logProbability
             if (logProbability > maxProbability) {
                 maxProbability = logProbability
                 chosenLabel = label
@@ -286,10 +287,11 @@ const classifyCached = new Map()
         })
 
         const returnObj = {
-            result: chosenLabel,
+            chosenLabel,
+            labels,
             content: decorate(content, result[chosenLabel]),
         }
-        console.log(result[chosenLabel])
+
         classifyCached.set(id, returnObj)
         return returnObj;
     }

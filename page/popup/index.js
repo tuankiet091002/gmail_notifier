@@ -17,7 +17,8 @@ const qs = function (q, m) {
         'email': '#content div[name="email"]',
         'sender': '#content div[name="sender"] a',
         'title': '#content div[name="title"] a',
-        'titleContainer': '#content div[name="title"]',
+        'classify': '#content div[name="title"] div[name="classify"]',
+        'classifyResult': '#content div[name="title"] div[name="classify"] #label',
         'next': 'header div div:nth-child(2)',
         'previous': 'header div div:nth-child(1)',
         'archive': 'footer div[name="archive"]',
@@ -282,24 +283,21 @@ function expandAndClassify() {
 
                 // classify-related actions
                 if (prefs.decorated) {
-                    const {content: dContent, result: label} = classifier.classify(link, content)
+                    const {content: dContent, chosenLabel, labels} = classifier.classify(link, content)
                     // change content
                     content = dContent;
-                    // icon at mail title
-                    if (!document.querySelector('div[name="arrow"]')) {
-                        const arrowIcon = document.createElement('div')
-                        arrowIcon.setAttribute("name", "arrow")
-                        const labelIcon = document.createElement('div')
-                        labelIcon.setAttribute("name", label === "spam" ? "spam" : "safe")
-                        qs("titleContainer").insertBefore(arrowIcon, qs('star'))
-                        qs("titleContainer").insertBefore(labelIcon, qs('star'))
-                    }
+                    // classify result at mail title
+                    qs("classify").style.display = "flex"
+                    qs("classifyResult").textContent = chosenLabel
+                    const tooltipContent = ['spam', "ham"].map(l => `${l}: ${labels[l]}`).join(" \n")
+                    console.log(tooltipContent)
+                    qs("classify").setAttribute("title", tooltipContent)
 
                     // spam button
-                    if (label === "spam") {
-                        qs("spam").style.backgroundColor = "#c47d09"
-                        qs("spam").style.opacity = 1
-                        qs("spam").style.filter = "invert(1)"
+                    if (chosenLabel === "spam") {
+                        qs('spam').style.backgroundColor = "#c47d09"
+                        qs('spam').style.opacity = 1
+                        qs('spam').style.filter = "invert(1)"
                     }
 
                     // manual classify

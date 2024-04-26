@@ -187,7 +187,7 @@ header div[name="nav"] div[name="next"] {
     background-position: center;
     cursor: pointer;
     vertical-align: bottom;
-    margin-right: 10px;
+    margin-right: 5px;
     background-image: url('/page/popup/icons/conclude_arrow.png');
 }
 
@@ -197,7 +197,7 @@ header div[name="nav"] div[name="next"] {
     background-repeat: no-repeat;
     background-size: 22px;
     background-position: center;
-    margin-right: 10px;
+    margin-right: 5px;
     background-image: url('/page/popup/icons/spam_mail.png');
 }
 
@@ -207,7 +207,7 @@ header div[name="nav"] div[name="next"] {
     background-repeat: no-repeat;
     background-size: 36px;
     background-position: center;
-    margin-right: 10px;
+    margin-right: 5px;
     background-image: url('/page/popup/icons/safe_mail.png');
 }
 
@@ -441,4 +441,37 @@ body[mode="expanded"] #expand {
     padding: 5px 10px;
     z-index: 98;
     white-space: nowrap;
+}
+
+.tooltip-reverse {
+    position: relative;
+    z-index: 99;
+}
+
+.tooltip-reverse:hover::before {
+    position: absolute;
+    left: 38%;
+    top: 24px;
+    content: "";
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+    border-top: 6px solid rgba(0, 0, 0, 0.8);
+    z-index: 99;
+}
+
+.tooltip-reverse:hover::after {
+    position: absolute;
+    top: 30px;
+    left: 42%;
+    transform: translateX(-50%);
+    content: attr(title);
+    background-color: rgba(0, 0, 0, 0.8);
+    border-radius: 1px;
+    text-align: center;
+    color: #fff;
+    font-weight: normal;
+    font-size: 12px;
+    padding: 5px 10px;
+    z-index: 99;
+    white-space: pre;
 }
