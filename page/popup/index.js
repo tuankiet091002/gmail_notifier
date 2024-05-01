@@ -6,6 +6,7 @@ let selected = {};
 const skippedLabels = ['STARRED', 'Inbox', 'INBOX'];
 let firstTimeExpand = new Map();
 let labelContent;
+let classifyContent;
 
 const qs = function (q, m) {
     const reserved = {
@@ -19,6 +20,10 @@ const qs = function (q, m) {
         'title': '#content div[name="title"] a',
         'classify': '#content div[name="title"] div[name="classify"]',
         'classifyResult': '#content div[name="title"] div[name="classify"] #label',
+        'classifyTooltip': '#content div[name="title"] div[name="classify"] .tooltip-content',
+        'classifyTooltipContent': '#content div[name="title"] div[name="classify"] .tooltip-content div[name=content] div[name=detail]',
+        'classifyAccept': '#content div[name="title"] div[name="classify"] .tooltip-content div[name=content] div[name=classify_accept]',
+        'classifyDecline': '#content div[name="title"] div[name="classify"] .tooltip-content div[name=content] div[name=classify_decline]',
         'next': 'header div div:nth-child(2)',
         'previous': 'header div div:nth-child(1)',
         'archive': 'footer div[name="archive"]',
@@ -283,15 +288,16 @@ function expandAndClassify() {
 
                 // classify-related actions
                 if (prefs.decorated) {
-                    const {content: dContent, chosenLabel, labels} = classifier.classify(link, content)
+                    classifyContent = classifier.classify(link, content)
+                    const {decoratedContent: dContent, chosenLabel, labels} = classifyContent
                     // change content
                     content = dContent;
                     // classify result at mail title
                     qs("classify").style.display = "flex"
                     qs("classifyResult").textContent = chosenLabel
-                    const tooltipContent = ['spam', "ham"].map(l => `${l}: ${labels[l]}`).join(" \n")
-                    console.log(tooltipContent)
-                    qs("classify").setAttribute("title", tooltipContent)
+                    qs("classifyResult").style.color = chosenLabel === "ham" ? "#22C55E" : "#EF4444";
+                    qs("classifyTooltip").display = "block";
+                    qs("classifyTooltipContent").textContent = ['spam', "ham"].map(l => `${l}: ${labels[l]}`).join(" \n")
 
                     // spam button
                     if (chosenLabel === "spam") {
@@ -539,6 +545,20 @@ new Listen('star', 'click', () => {
     const cmd = document.body.dataset.star === 'true' ? 'xst' : 'st';
     action(cmd);
     document.body.dataset.star = cmd === 'xst' ? 'false' : 'true';
+});
+new Listen('classify', 'mouseover', () => {
+    qs('classifyTooltip').style.display = "block"
+});
+new Listen('classify', 'mouseout', () => {
+    qs('classifyTooltip').style.display = "none"
+});
+new Listen('classifyAccept', 'click', () => {
+    classifier.trainHtml(selected.entry.link, classifyContent.content, classifyContent.chosenLabel).then(() => expandAndClassify())
+    alert("The email has been marked as " + classifyContent.chosenLabel)
+});
+new Listen('classifyDecline', 'click', () => {
+    classifier.trainHtml(selected.entry.link, classifyContent.content, classifyContent.chosenLabel === 'ham' ? 'spam' : 'ham').then(() => expandAndClassify())
+    alert("The email has been marked as " + (classifyContent.chosenLabel === 'ham' ? 'spam' : 'ham'))
 });
 
 redisplay();

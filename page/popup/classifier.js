@@ -19,7 +19,7 @@ const classifyCached = new Map()
 
     const once = () => {
         chrome.runtime.sendMessage({method: "fetch-stats"}, res => {
-                // stats = res
+                stats = res
                 if (!Object.keys(stats.stopwords).length) {
                     fetch('/data/classifier-datas/stopwords.json')
                         .then((response) => response.json())
@@ -249,8 +249,14 @@ const classifyCached = new Map()
 
     }
 
-    classifier.classify = (id, content) => {
+    classifier.trainHtml = (id, content, label) => {
+        if (classifyCached.has(id))
+            classifyCached.delete(id)
 
+        return classifier.train(content.innerText, label);
+    }
+
+    classifier.classify = (id, content) => {
         if (classifyCached.has(id)) {
             return classifyCached.get(id)
         }
@@ -289,7 +295,8 @@ const classifyCached = new Map()
         const returnObj = {
             chosenLabel,
             labels,
-            content: decorate(content, result[chosenLabel]),
+            content,
+            decoratedContent: decorate(content, result[chosenLabel]),
         }
 
         classifyCached.set(id, returnObj)
