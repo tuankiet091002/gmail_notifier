@@ -557,8 +557,8 @@ new Listen('classifyAccept', 'click', () => {
     alert("The email has been marked as " + classifyContent.chosenLabel)
 });
 new Listen('classifyDecline', 'click', () => {
-    classifier.trainHtml(selected.entry.link, classifyContent.content, classifyContent.chosenLabel === 'ham' ? 'spam' : 'ham').then(() => expandAndClassify())
-    alert("The email has been marked as " + (classifyContent.chosenLabel === 'ham' ? 'spam' : 'ham'))
+    classifier.trainHtml(selected.entry.link, classifyContent.content, classifyContent.chosenLabel === 'safe' ? 'spam' : 'ham').then(() => expandAndClassify())
+    alert("The email has been marked as " + (classifyContent.chosenLabel === 'safe' ? 'spam' : 'safe'))
 });
 
 redisplay();

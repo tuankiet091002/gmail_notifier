@@ -293,7 +293,7 @@ const classifyCached = new Map()
         })
 
         const returnObj = {
-            chosenLabel,
+            chosenLabel: chosenLabel === "ham" ? "safe" : "spam",
             labels,
             content,
             decoratedContent: decorate(content, result[chosenLabel]),
